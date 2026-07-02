@@ -1,6 +1,6 @@
-# Redrob Hackathon — Candidate Ranker
+# Redrob Hackathon - Candidate Ranker
 
-Ranks 100,000 candidates against the "Senior AI Engineer — Founding Team" JD
+Ranks 100,000 candidates against the "Senior AI Engineer - Founding Team" JD
 and outputs the top 100 as `submission.csv`.
 
 ## Data
@@ -10,11 +10,15 @@ India Runs Hackathon organizers and is **not included in this repo** (it exceeds
 GitHub's file size limit and is the organizers' data to distribute).
 
 **Download the dataset here:**
-[candidates.jsonl — Google Drive](https://drive.google.com/file/d/1MfD47XvVdRKBGRAyzGOxDCEf2ve96Jjo/view)
+[candidates.jsonl - Google Drive](https://drive.google.com/file/d/1MfD47XvVdRKBGRAyzGOxDCEf2ve96Jjo/view)
 
 Place it at the repo root as `candidates.jsonl` before running any of the steps below.
 
 ## Setup
+
+> **Before running anything:** make sure `candidates.jsonl` is in the repo root folder.
+> Download it from the link in the Data section above. The file is not included in
+> this repo because it is 465 MB and belongs to the hackathon organizers.
 
 ```bash
 pip install -r requirements.txt
@@ -22,7 +26,7 @@ pip install -r requirements.txt
 
 ## Reproduce (two steps)
 
-**Step 1 — offline precompute (not timed, needs network once to download the
+**Step 1 - offline precompute (not timed, needs network once to download the
 embedding model; not part of the 5-minute budget):**
 
 ```bash
@@ -32,27 +36,28 @@ python precompute_embeddings.py --candidates ./candidates.jsonl --out_dir ./arti
 This embeds the JD and all candidates with a local `sentence-transformers`
 model (`all-MiniLM-L6-v2`, ~90MB, downloaded once from HuggingFace) and caches
 the vectors + candidate metadata to `./artifacts/`. Takes a few minutes on CPU
-for 100K candidates.
+for 100K candidates. The `artifacts/` folder is created automatically by this
+script - you do not need to create it manually.
 
 If sentence-transformers / HuggingFace Hub is unreachable in your environment
-(e.g. fully offline grading sandbox), use the pure scikit-learn fallback —
+(e.g. fully offline grading sandbox), use the pure scikit-learn fallback -
 no network or model download required at all:
 
 ```bash
 python precompute_embeddings.py --candidates ./candidates.jsonl --out_dir ./artifacts --engine tfidf
 ```
 
-**Step 2 — timed ranking step (CPU only, no network, <5 min, <16GB RAM):**
+**Step 2 - timed ranking step (CPU only, no network, <5 min, <16GB RAM):**
 
 ```bash
 python rank.py --candidates ./candidates.jsonl --artifacts ./artifacts --out ./submission.csv
 ```
 
-This only loads the cached artifacts and scores/ranks — no embedding model is
-loaded or called here, so it's fast and fully offline. On the full 100K
+This only loads the cached artifacts and scores/ranks - no embedding model is
+loaded or called here, so it is fast and fully offline. On the full 100K
 candidate set this completes in well under a minute on a single CPU core.
 
-**Step 3 — validate:**
+**Step 3 - validate:**
 
 ```bash
 python validate_submission.py ./submission.csv
@@ -129,14 +134,14 @@ paraphrases better than TF-IDF term overlap does.
 
 ## Files
 
-- `common.py` — shared scoring and feature logic: JD facet checklist,
+- `common.py` - shared scoring and feature logic: JD facet checklist,
   penalty rules, honeypot detection, behavioral multiplier, reasoning
   generation
-- `precompute_embeddings.py` — offline embedding step
-- `rank.py` — timed ranking step, produces `submission.csv`
-- `test_adversarial.py` — adversarial synthetic test suite proving the
+- `precompute_embeddings.py` - offline embedding step
+- `rank.py` - timed ranking step, produces `submission.csv`
+- `test_adversarial.py` - adversarial synthetic test suite proving the
   scoring logic handles known trap patterns correctly
-- `validate_submission.py` — format validator (provided by organizers)
+- `validate_submission.py` - format validator (provided by organizers)
 - `requirements.txt`
 
 ## Compute profile
@@ -145,6 +150,6 @@ Tested on 100,000 real candidates:
 - Precompute (offline): ~95s with the scikit-learn TF-IDF fallback on 1 CPU
   core / 4GB RAM (sentence-transformers is slower but still well within a
   reasonable offline window, and produces higher quality semantic matches)
-- Ranking step (timed): ~17s on 1 CPU core / 4GB RAM — well under the 5-minute
+- Ranking step (timed): ~17s on 1 CPU core / 4GB RAM - well under the 5-minute
   budget even on modest hardware
 - 0 honeypots surfaced in top 100 on this run
