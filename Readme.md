@@ -9,8 +9,10 @@ and outputs the top 100 as `submission.csv`.
 India Runs Hackathon organizers and is **not included in this repo** (it exceeds
 GitHub's file size limit and is the organizers' data to distribute).
 
-To reproduce results, download the dataset from the hackathon portal and place
-it at the repo root as `candidates.jsonl` before running any of the steps below.
+**Download the dataset here:**
+[candidates.jsonl — Google Drive](https://drive.google.com/file/d/1MfD47XvVdRKBGRAyzGOxDCEf2ve96Jjo/view)
+
+Place it at the repo root as `candidates.jsonl` before running any of the steps below.
 
 ## Setup
 
