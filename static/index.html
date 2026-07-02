@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ranker</title>
+  <meta name="description" content="Upload a candidates file and get a ranked shortlist based on genuine fit, not keyword matching." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+
+  <div class="grid-overlay"></div>
+
+  <header class="site-header">
+    <div class="header-inner">
+      <div class="brand">
+        <div class="brand-mark">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+            <rect x="0" y="0" width="6" height="6" rx="1.5" fill="currentColor"/>
+            <rect x="8" y="0" width="6" height="6" rx="1.5" fill="currentColor" opacity="0.4"/>
+            <rect x="0" y="8" width="6" height="6" rx="1.5" fill="currentColor" opacity="0.4"/>
+            <rect x="8" y="8" width="6" height="6" rx="1.5" fill="currentColor" opacity="0.15"/>
+          </svg>
+        </div>
+        <span class="brand-name">Ranker</span>
+      </div>
+      <div class="header-right">
+        <span class="header-hint" id="header-hint"></span>
+        <button id="btn-download" class="btn btn-ghost" disabled>Export CSV</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="main">
+
+    <aside class="sidebar">
+
+      <div class="card">
+        <label class="field-label">Candidates file</label>
+        <p class="field-hint">Upload a <code>.jsonl</code> file. One JSON candidate per line.</p>
+
+        <div class="upload-zone" id="upload-zone">
+          <input type="file" id="file-input" accept=".jsonl" hidden />
+          <div id="upload-idle" class="upload-content">
+            <div class="upload-glyph">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                <polyline points="17 8 12 3 7 8"/>
+                <line x1="12" y1="3" x2="12" y2="15"/>
+              </svg>
+            </div>
+            <p class="upload-label">Drop .jsonl file</p>
+            <button class="link-btn" id="browse-btn">browse files</button>
+          </div>
+          <div id="upload-chosen" class="upload-content" style="display:none">
+            <div class="file-tag">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+              <span id="upload-filename"></span>
+            </div>
+            <button class="link-btn muted" id="clear-btn">Remove</button>
+          </div>
+        </div>
+
+        <div id="progress-wrap" style="display:none" class="progress-wrap">
+          <div class="progress-track"><div class="progress-fill" id="progress-fill"></div></div>
+          <span class="progress-text" id="progress-text">Uploading...</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <label class="field-label">Return top N</label>
+        <input type="number" id="top-n" class="n-input" value="100" min="1" max="10000" />
+        <div class="n-presets">
+          <button class="preset" data-n="10">10</button>
+          <button class="preset" data-n="50">50</button>
+          <button class="preset active" data-n="100">100</button>
+          <button class="preset" data-n="500">500</button>
+          <button class="preset" data-n="1000">1000</button>
+        </div>
+      </div>
+
+      <button id="btn-rank" class="btn btn-primary full-w" disabled>Run ranking</button>
+
+      <div id="funnel" class="funnel" style="display:none">
+        <div class="funnel-row">
+          <span class="funnel-num" id="f-total">0</span>
+          <span class="funnel-lbl">candidates uploaded</span>
+        </div>
+        <div class="funnel-arrow">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg>
+        </div>
+        <div class="funnel-row dim">
+          <span class="funnel-num" id="f-excluded">0</span>
+          <span class="funnel-lbl">honeypots removed</span>
+        </div>
+        <div class="funnel-arrow">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg>
+        </div>
+        <div class="funnel-row accent">
+          <span class="funnel-num" id="f-ranked">0</span>
+          <span class="funnel-lbl">candidates ranked</span>
+        </div>
+      </div>
+
+    </aside>
+
+    <section class="content">
+      <div class="topbar">
+        <h1 class="section-title" id="results-title">Results</h1>
+        <div class="topbar-right">
+          <div class="search-wrap">
+            <span class="search-label">Search by ID, title, location or reason</span>
+            <input id="search" class="search" type="text" placeholder="e.g. Delhi, senior, Python..." />
+          </div>
+          <div class="sort-chips">
+            <button class="chip active" data-col="rank">Rank</button>
+            <button class="chip" data-col="score">Score</button>
+            <button class="chip" data-col="candidate_id">ID</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="state-empty" class="state">
+        <div class="state-icon">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        </div>
+        <p class="state-title">No results</p>
+        <p class="state-sub">Upload a <code>.jsonl</code> candidates file and click Run ranking.</p>
+      </div>
+
+      <div id="state-loading" class="state" style="display:none">
+        <div class="spin"></div>
+        <p class="state-sub" id="loading-text">Processing...</p>
+      </div>
+
+      <div id="state-error" class="state" style="display:none">
+        <p class="state-title err" id="error-text"></p>
+      </div>
+
+      <div id="table-wrap" class="table-wrap" style="display:none">
+        <table class="tbl">
+          <thead>
+            <tr>
+              <th class="th-rank">Rank</th>
+              <th>Candidate</th>
+              <th>Title</th>
+              <th>Location</th>
+              <th>Score</th>
+              <th>Reasoning</th>
+            </tr>
+          </thead>
+          <tbody id="tbody"></tbody>
+        </table>
+      </div>
+
+      <p class="kbd-hint" id="kbd-hint" style="display:none">J / K to navigate &nbsp;&middot;&nbsp; Enter to open &nbsp;&middot;&nbsp; Esc to close</p>
+    </section>
+  </main>
+
+  <div id="overlay" class="overlay" style="display:none"></div>
+  <aside id="drawer" class="drawer" style="display:none">
+    <div class="drawer-head">
+      <div>
+        <p class="drawer-rank" id="d-rank"></p>
+        <p class="drawer-id" id="d-id"></p>
+      </div>
+      <button class="close-btn" id="drawer-close">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+
+    <div class="drawer-body">
+      <div class="score-display">
+        <div class="score-ring">
+          <svg viewBox="0 0 64 64" class="ring-svg">
+            <circle cx="32" cy="32" r="26" class="ring-bg"/>
+            <circle cx="32" cy="32" r="26" class="ring-fill" id="ring-fill"/>
+          </svg>
+          <span class="score-num" id="d-score"></span>
+        </div>
+        <p class="score-sub">match score</p>
+      </div>
+
+      <div class="field-group">
+        <div class="field">
+          <span class="flabel">Current title</span>
+          <span class="fvalue" id="d-title"></span>
+        </div>
+        <div class="field" id="d-loc-row">
+          <span class="flabel">Location</span>
+          <span class="fvalue" id="d-location"></span>
+        </div>
+        <div class="field" id="d-exp-row">
+          <span class="flabel">Experience</span>
+          <span class="fvalue" id="d-exp"></span>
+        </div>
+      </div>
+
+      <div class="facets-section">
+        <p class="facets-title">JD requirement coverage</p>
+        <div class="facets-grid" id="facets-grid"></div>
+      </div>
+
+      <div class="reasoning-section">
+        <p class="flabel">Why this candidate</p>
+        <p class="reasoning-body" id="d-reasoning"></p>
+      </div>
+    </div>
+  </aside>
+
+  <script src="/static/script.js"></script>
+</body>
+</html>
