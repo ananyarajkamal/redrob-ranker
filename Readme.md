@@ -3,6 +3,15 @@
 Ranks 100,000 candidates against the "Senior AI Engineer — Founding Team" JD
 and outputs the top 100 as `submission.csv`.
 
+## Data
+
+`candidates.jsonl` (~465 MB, 100K candidates) is the dataset provided by the
+India Runs Hackathon organizers and is **not included in this repo** (it exceeds
+GitHub's file size limit and is the organizers' data to distribute).
+
+To reproduce results, download the dataset from the hackathon portal and place
+it at the repo root as `candidates.jsonl` before running any of the steps below.
+
 ## Setup
 
 ```bash
